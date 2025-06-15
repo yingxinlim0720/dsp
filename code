@@ -1,0 +1,82 @@
+clc;
+close all;
+clear;
+[audio_data, audio_freq] = audioread('audioDSP.wav');
+%sound(audio_data, audio_freq)
+
+figure(1);
+subplot(2,1,1);
+plot(audio_data);            % Original signal in time domain
+title('Original Signal s[n]');
+xlabel('Time (s)'); ylabel ('Amplitude');
+
+N = length(audio_data);
+freq_vector = (0:N-1)*(audio_freq/N);
+audio_fd = fft(audio_data);
+audio_fdmag = abs(audio_fd);
+
+subplot(2,1,2);
+plot(freq_vector(1:N), audio_fdmag(1:N));  % Original signal in freq domain
+title('Frequency Components of input |S(\omega)|');
+xlabel('Frequency (Hz)'); ylabel('Magnitude');
+
+% Design filter
+filter_order = 100;   % Optimize later
+nyquist = audio_freq/2;
+
+fc_low = 900;    % Cutoff freq 
+fc_high = 2400;  % Bandwidth = 2400-900 = 1500
+wn = [fc_low fc_high]/nyquist;   % Normalized cutoff frequencies
+
+b = fir1(filter_order, wn, 'bandpass', hamming(filter_order+1));
+[h, w] = freqz(b,1);
+
+figure(2);
+subplot(2,1,1);
+plot(w, abs(h));    % |H(w)|
+title('Filter Frequency Response |H(\omega)|');
+xlabel('Frequency (Hz)'); ylabel('Magnitude');
+
+subplot(2,1,2);
+plot(w, 20*log10(abs(h)));     % |H(w)|db
+title('Filter Frequency Response in dB |H(\omega)|_{dB}');
+xlabel('Frequency (Hz)'); ylabel('Magnitude (dB)');
+
+figure(3);
+subplot(2,1,1);
+plot(w, angle(h));           % Phase response of H(w)
+title('Filter Phase Response \angle H(\omega)');
+xlabel('Frequency (Hz)'); ylabel('Phase (rad)');
+
+subplot(2,1,2);
+[z,p,k] = tf2zpk(b,1);
+%disp('Zeros: '), disp(z);
+%disp('Poles: '), disp(p);
+zplane(b, 1);         % POle-zero plot of H(z)
+title('Pole-Zero Plot of H(z)');
+
+figure(4);
+subplot(1,1,1);
+impz(b, 1, 100);
+title('Filter Impulse Response h[n]');
+xlabel('Samples'); ylabel('Amplitude');
+
+y = filter(b,1,audio_data);
+Y = abs(fft(y));
+
+figure(5);
+subplot(2,1,1);
+plot(freq_vector(1:N), Y(1:N));      % Output signal in freq domain
+title('Frequency Components After Filtering |Y(\omega)|');
+xlabel('Frequency (Hz)'); ylabel('Magnitude');
+
+subplot(2,1,2);
+plot((0:length(y)-1)/audio_freq, y);   % Output signal in time domain
+title('Output Signal y[n] in Time Domain');
+xlabel('Time (s)'); ylabel('Amplitude');
+
+filtered_filename = 'filtered_audio.wav';
+audiowrite(filtered_filename, y, audio_freq);
+disp(['Filtered audio saved as: ' filtered_filename]);
+
+sound(y, audio_freq);
