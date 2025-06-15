@@ -44,9 +44,9 @@ xlabel('Frequency (Hz)'); ylabel('Magnitude (dB)');
 
 figure(3);
 subplot(2,1,1);
-plot(w, angle(h));           % Phase response of H(w)
+plot(w, unwrap(angle(h)));           % Phase response of H(w)
 title('Filter Phase Response \angle H(\omega)');
-xlabel('Frequency (Hz)'); ylabel('Phase (rad)');
+xlabel('Frequency (kHz)'); ylabel('Phase (rad)');
 
 subplot(2,1,2);
 [z,p,k] = tf2zpk(b,1);
